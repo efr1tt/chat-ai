@@ -2,9 +2,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies and run the custom server:
 
 ```bash
+# Install packages
+npm install
+
+# Start dev server
 npm run dev
 # or
 yarn dev
@@ -15,6 +19,7 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local` based on `.env.example` before running the server.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
