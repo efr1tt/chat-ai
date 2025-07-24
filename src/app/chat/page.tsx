@@ -1,33 +1,33 @@
 'use client'
-import { useEffect, useState } from 'react'
-import io from 'socket.io-client'
+import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '@/lib/store'
 import { addMessage } from '@/lib/store'
 import { v4 as uuid } from 'uuid'
 
-let socket: ReturnType<typeof io> | null = null
-
 export default function Chat() {
   const messages = useSelector((state: RootState) => state.messages)
   const dispatch = useDispatch()
   const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    socket = io()
-    socket.on('message', (msg: { content: string; role: string }) => {
-      dispatch(addMessage({ id: uuid(), content: msg.content, role: msg.role as any, createdAt: new Date().toISOString() }))
-    })
-    return () => {
-      socket?.disconnect()
-    }
-  }, [dispatch])
-
-  function send() {
-    if (!input.trim()) return
-    socket?.emit('message', { content: input })
-    dispatch(addMessage({ id: uuid(), content: input, role: 'user', createdAt: new Date().toISOString() }))
+  async function send() {
+    if (!input.trim() || loading) return
+    const userMessage = { id: uuid(), content: input, role: 'user' as const, createdAt: new Date().toISOString() }
+    dispatch(addMessage(userMessage))
     setInput('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input })
+      })
+      const data = await res.json()
+      dispatch(addMessage({ id: uuid(), content: data.reply, role: 'assistant', createdAt: new Date().toISOString() }))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -46,7 +46,7 @@ export default function Chat() {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
         />
-        <button onClick={send} className="bg-blue-600 px-4 py-2 rounded-md">Send</button>
+        <button onClick={send} className="bg-blue-600 px-4 py-2 rounded-md" disabled={loading}>Отправить</button>
       </div>
     </div>
   )
